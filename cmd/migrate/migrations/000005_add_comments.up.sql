@@ -1,0 +1,10 @@
+
+CREATE TABLE IF NOT EXISTS comments (
+    id BIGSERIAL PRIMARY KEY,
+    post_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP(0) WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    CONSTRAINT fk_comment_post FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+    CONSTRAINT fk_comment_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);

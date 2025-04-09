@@ -1,0 +1,2 @@
+ALTER TABLE posts
+DROP CLOUMN version;

@@ -1,0 +1,78 @@
+POST http://localhost:3000/v1/posts
+Content-Type: "application/json"
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJnb3BoZXJzb2NpYWwiLCJleHAiOjE3NDQ0MDYyNDAsImlhdCI6MTc0NDE0NzA0MCwiaXNzIjoiZ29waGVyc29jaWFsIiwibmJmIjoxNzQ0MTQ3MDQwLCJzdWIiOjgzfQ.hiGxTTsTqEr3YGaw3xflh_JLbxmmvpLjTpICjzozQuo
+
+
+{
+    "title": "Meu Post1",
+    "content": "Conteúdo de teste",
+    "tags": ["golang", "backend"]
+}
+
+###
+
+GET http://localhost:3000/v1/posts/1
+
+
+###
+DELETE http://localhost:3000/v1/posts/1
+
+###
+PATCH http://localhost:3000/v1/posts/1
+Content-Type: "application/json"
+
+{
+    "content": "Meu novo conteudo"
+
+} 
+
+# 
+###
+
+
+
+POST http://localhost:3000/v1/auth/user HTTP/1.1
+Content-Type: "application/json"
+
+{
+  "email":"test@cadu.com",
+  "password":"12233",
+  "username":"caduzinho "
+}
+
+
+
+###
+PUT  http://localhost:3000/v1/users/activate/1ef0ce52-58dd-4cb0-ac49-2b517ab87f93 HTTP/1.1
+
+###
+
+POST http://localhost:3000/v1/auth/token HTTP/1.1
+Content-Type: "application/json"
+
+{
+  "email":"test@cadu.com",
+  "password":"12233"
+ 
+}
+###
+GET http://localhost:3000/v1/users/2
+
+###
+PUT http://localhost:3000/v1/users/1/follow HTTP/1.1
+Content-Type: application/json
+
+{
+  "user_id": 2
+}
+###
+PUT http://localhost:3000/v1/users/2/unfollow HTTP/1.1
+Content-Type: application/json
+
+{
+  "user_id": 1
+}
+
+###
+GET http://localhost:3000/v1/users/feed HTTP/1.1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJnb3BoZXJzb2NpYWwiLCJleHAiOjE3NDQ0MDYyNDAsImlhdCI6MTc0NDE0NzA0MCwiaXNzIjoiZ29waGVyc29jaWFsIiwibmJmIjoxNzQ0MTQ3MDQwLCJzdWIiOjgzfQ.hiGxTTsTqEr3YGaw3xflh_JLbxmmvpLjTpICjzozQuo
