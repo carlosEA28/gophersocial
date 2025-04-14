@@ -9,3 +9,4 @@ INSERT INTO roles(name,description,level) VALUES('user','a user can create posts
 INSERT INTO roles(name,description,level) VALUES('moderator','a moderator can update other users posts',2);
 INSERT INTO roles(name,description,level) VALUES('admin','an admin can update and delete other users posts',3);
 
+    
