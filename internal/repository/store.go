@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"time"
+
+	"github.com/carlosEA28/Social/internal/redis"
 )
 
 var (
@@ -26,6 +28,7 @@ type Storage struct {
 	Users interface {
 		Create(context.Context, *sql.Tx, *User) error
 		GetUserById(context.Context, int64) (*User, error)
+		GetAll(context.Context) ([]User, error)
 		CreateAndInvite(ctx context.Context, user *User, token string, exp time.Duration) error
 		Activate(context.Context, string) error
 		Delete(context.Context, int64) error
@@ -44,10 +47,10 @@ type Storage struct {
 	}
 }
 
-func NewPostgresStorage(db *sql.DB) Storage {
+func NewPostgresStorage(db *sql.DB, redisClient *redis.RedisClient) Storage {
 	return Storage{
 		Posts:     &PostgresPostsStore{db},
-		Users:     &PostgresUsersStore{db},
+		Users:     &PostgresUsersStore{db, redisClient},
 		Comment:   &PostgresCommentsStore{db},
 		Followers: &FollowerRepository{db},
 		Roles:     &RoleRepo{db},

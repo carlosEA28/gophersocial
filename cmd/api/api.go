@@ -26,10 +26,15 @@ type app struct {
 type config struct {
 	addr        string
 	db          dbConfig
+	redis       redisConfig
 	env         string
 	mail        mailConfig
 	frontendURL string
 	auth        AuthConfig
+}
+
+type redisConfig struct {
+	addr string
 }
 
 type AuthConfig struct {

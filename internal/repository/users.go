@@ -5,9 +5,12 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
+	"github.com/carlosEA28/Social/internal/redis"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -41,8 +44,13 @@ func (p *password) Set(text string) error {
 }
 
 type PostgresUsersStore struct {
-	db *sql.DB
+	db    *sql.DB
+	redis *redis.RedisClient
 }
+
+const (
+	cacheDuration = 5 * time.Minute
+)
 
 func (s *PostgresUsersStore) Create(ctx context.Context, tx *sql.Tx, user *User) error {
 	query := `INSERT INTO users (username, password, email,role_id) VALUES($1,$2,$3,(SELECT id FROM roles WHERE name = $4)) RETURNING id, created_at`
@@ -73,6 +81,17 @@ func (s *PostgresUsersStore) Create(ctx context.Context, tx *sql.Tx, user *User)
 }
 
 func (s *PostgresUsersStore) GetUserById(ctx context.Context, userID int64) (*User, error) {
+	cacheKey := fmt.Sprintf("user:%d", userID)
+
+	if s.redis != nil {
+		if cached, err := s.redis.Get(ctx, cacheKey); err == nil {
+			var user User
+			if err := json.Unmarshal([]byte(cached), &user); err == nil {
+				return &user, nil
+			}
+		}
+	}
+
 	query := `
 		SELECT users.id, username, email, password, created_at, roles.*
 		FROM users
@@ -105,6 +124,12 @@ func (s *PostgresUsersStore) GetUserById(ctx context.Context, userID int64) (*Us
 			return nil, ErrorNotFound
 		default:
 			return nil, err
+		}
+	}
+
+	if s.redis != nil {
+		if data, err := json.Marshal(user); err == nil {
+			_ = s.redis.Set(ctx, cacheKey, string(data), cacheDuration)
 		}
 	}
 
@@ -276,4 +301,59 @@ func (s *PostgresUsersStore) GetByEmail(ctx context.Context, email string) (*Use
 	}
 
 	return user, nil
+}
+
+func (s *PostgresUsersStore) GetAll(ctx context.Context) ([]User, error) {
+	cacheKey := "users:all"
+
+	if s.redis != nil {
+		if cached, err := s.redis.Get(ctx, cacheKey); err == nil {
+			var users []User
+			if err := json.Unmarshal([]byte(cached), &users); err == nil {
+				return users, nil
+			}
+		}
+	}
+
+	query := `SELECT users.id, username, email, created_at, is_active, role_id, roles.id, roles.name, roles.level, roles.description
+	FROM users
+	JOIN roles ON (users.role_id = roles.id)
+	WHERE is_active = true`
+
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeOutDuration)
+	defer cancel()
+
+	rows, err := s.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []User
+	for rows.Next() {
+		var user User
+		if err := rows.Scan(
+			&user.ID,
+			&user.Username,
+			&user.Email,
+			&user.CreatedAt,
+			&user.IsActive,
+			&user.RoleId,
+			&user.Role.Id,
+			&user.Role.Name,
+			&user.Role.Level,
+			&user.Role.Description,
+		); err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	if s.redis != nil {
+		if data, err := json.Marshal(users); err == nil {
+			_ = s.redis.Set(ctx, cacheKey, string(data), cacheDuration)
+		}
+	}
+
+	return users, nil
 }

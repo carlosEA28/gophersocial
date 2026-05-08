@@ -8,6 +8,7 @@ import (
 	"github.com/carlosEA28/Social/internal/db"
 	"github.com/carlosEA28/Social/internal/env"
 	"github.com/carlosEA28/Social/internal/mail"
+	"github.com/carlosEA28/Social/internal/redis"
 	"github.com/carlosEA28/Social/internal/repository"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
@@ -30,6 +31,9 @@ func main() {
 			maxOpenConns: env.GetInt("DB_MAX_OPEN_CONNS", 30),
 			maxIdleConns: env.GetInt("DB_MAX_IDLE_CONNS", 30),
 			maxIdleTime:  env.GetString("DB_MAX_IDLE_TIME", "15m"),
+		},
+		redis: redisConfig{
+			addr: env.GetString("REDIS_ADDR", "localhost:6379"),
 		},
 		env: env.GetString("ENV", "development"),
 		mail: mailConfig{
@@ -62,7 +66,15 @@ func main() {
 	defer db.Close()
 	logger.Info("database running")
 
-	store := repository.NewPostgresStorage(db)
+	//redis
+	redisClient, err := redis.New(cfg.redis.addr)
+	if err != nil {
+		logger.Fatal(err)
+	}
+	defer redisClient.Close()
+	logger.Info("redis running")
+
+	store := repository.NewPostgresStorage(db, redisClient)
 
 	mailClient, err := mail.NewMailTrapClient(cfg.mail.mailtrap.apiKey, cfg.mail.mailtrap.fromEmail)
 	if err != nil {
